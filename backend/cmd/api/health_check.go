@@ -28,9 +28,7 @@ func (app *Application) healthcheck_handler(writer http.ResponseWriter, request 
 func (app *Application) image(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set("Access-Control-Allow-Origin", "*")
 	writer.Header().Set("Content-Type", "application/json")
-	fmt.Fprintln(writer, "get image data:", version)
 	writer.WriteHeader(http.StatusOK)
-	writer.Write([]byte(`{"status": "ok"}`))
 	file, handler, err := request.FormFile("image_field")
 
 	if err != nil {
@@ -39,7 +37,8 @@ func (app *Application) image(writer http.ResponseWriter, request *http.Request)
 	}
 	defer file.Close()
 
-	dst, err := createFile(handler.Filename)
+	file_name := handler.Filename
+	dst, err := createFile(file_name)
 	if err != nil {
 		http.Error(writer, "Error creating the empty file", http.StatusInternalServerError)
 		return
@@ -49,6 +48,9 @@ func (app *Application) image(writer http.ResponseWriter, request *http.Request)
 	if _, err := dst.ReadFrom(file); err != nil {
 		http.Error(writer, "Error writing the content of file", http.StatusInternalServerError)
 	}
+
+	msg := fmt.Sprintf("{\"status\": \"ok\", \"file_name\":\"%s\" }", file_name)
+	writer.Write([]byte(msg))
 }
 
 func createFile(filename string) (*os.File, error) {
